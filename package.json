@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@react-native-firebase/app": "^8.4.7",
+    "@react-native-firebase/ml-vision": "^7.4.13",
+    "exceljs": "^4.4.0",
+    "react-native-mmkv": "^4.3.2",
+    "react-native-vision-camera": "^5.1.0"
+  }
+}
