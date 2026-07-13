@@ -11,6 +11,7 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <View style={styles.root}>
         <Stack
+          initialRouteName="(tabs)"
           screenOptions={{
             headerStyle: { backgroundColor: Colors.background },
             headerTintColor: Colors.text,
