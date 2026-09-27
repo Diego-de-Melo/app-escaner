@@ -70,7 +70,7 @@ export const ScanSessionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         rawText,
         addedAt: new Date().toISOString(),
       };
-      return [...prev, newItem];
+      return [newItem, ...prev];
     });
 
     return { added: true, isDuplicate };

@@ -11,7 +11,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { settingsStorage, AppSettings } from '../../src/storage/ProductStorage';
+import { settingsStorage, openAIApiKeyStorage, geminiApiKeyStorage, AppSettings } from '../../src/storage/ProductStorage';
+import { ApiKeySchema } from '../../src/types/validation';
 import { Card, AppButton, AppModal, ModalAction } from '../../components';
 import { Colors, Typography, Spacing, Radius } from '../../theme';
 
@@ -54,17 +55,23 @@ const SettingsScreen: React.FC = () => {
 
   const [settings, setSettings] = useState<AppSettings>({
     defaultUnit: 'UN', defaultLocation: 'Estoque Principal', autoIncrementQuantity: true,
-    scanSoundEnabled: true, vibrationEnabled: true, openAIKey: '', openAIModel: 'gpt-4o-mini',
+    scanSoundEnabled: true, vibrationEnabled: true, aiProvider: 'gemini', openAIModel: 'gpt-4o-mini', geminiModel: 'gemini-2.0-flash',
   });
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [showOpenAIKeyModal, setShowOpenAIKeyModal] = useState(false);
+  const [showGeminiKeyModal, setShowGeminiKeyModal] = useState(false);
+  const [openAIKeyInput, setOpenAIKeyInput] = useState('');
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
 
   useEffect(() => {
     (async () => {
       const s = await settingsStorage.get();
       setSettings(s);
-      setApiKeyInput(s.openAIKey);
+      const openAIKey = await openAIApiKeyStorage.get();
+      setOpenAIKeyInput(openAIKey);
+      const geminiKey = await geminiApiKeyStorage.get();
+      setGeminiKeyInput(geminiKey);
     })();
   }, []);
 
@@ -74,12 +81,23 @@ const SettingsScreen: React.FC = () => {
     await settingsStorage.set({ [key]: value });
   };
 
-  const handleSaveApiKey = async () => {
-    if (apiKeyInput.trim().startsWith('sk-')) {
-      await updateSetting('openAIKey', apiKeyInput.trim());
-      setShowApiKeyModal(false);
+  const handleSaveOpenAIKey = async () => {
+    const validation = ApiKeySchema.safeParse(openAIKeyInput.trim());
+    if (validation.success) {
+      await openAIApiKeyStorage.set(openAIKeyInput.trim());
+      setShowOpenAIKeyModal(false);
     } else {
-      Alert.alert('Erro', 'Chave deve comecar com "sk-"');
+      Alert.alert('Erro', validation.error.issues[0].message);
+    }
+  };
+
+  const handleSaveGeminiKey = async () => {
+    const validation = ApiKeySchema.safeParse(geminiKeyInput.trim());
+    if (validation.success) {
+      await geminiApiKeyStorage.set(geminiKeyInput.trim());
+      setShowGeminiKeyModal(false);
+    } else {
+      Alert.alert('Erro', validation.error.issues[0].message);
     }
   };
 
@@ -91,39 +109,103 @@ const SettingsScreen: React.FC = () => {
           <Card>
             <TouchableOpacity
               style={styles.row}
-              onPress={() => { setApiKeyInput(settings.openAIKey); setShowApiKeyModal(true); }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>API Key</Text>
-                <Text style={styles.rowDesc}>
-                  {settings.openAIKey
-                    ? `••••${settings.openAIKey.slice(-4)}`
-                    : 'Nao configurada'}
-                </Text>
-              </View>
-              <Text style={styles.rowArrow}>›</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.row, { borderBottomWidth: 0 }]}
-              onPress={() => Alert.alert('Modelo', 'Escolha:', [
-                { text: 'gpt-4o-mini', onPress: () => updateSetting('openAIModel', 'gpt-4o-mini') },
-                { text: 'gpt-4o', onPress: () => updateSetting('openAIModel', 'gpt-4o') },
+              onPress={() => Alert.alert('Provedor de IA', 'Escolha qual usar:', [
+                { text: 'Gemini (500 gratis/dia)', onPress: () => updateSetting('aiProvider', 'gemini') },
+                { text: 'OpenAI', onPress: () => updateSetting('aiProvider', 'openai') },
                 { text: 'Cancelar', style: 'cancel' },
               ])}
               activeOpacity={0.7}
             >
               <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>Modelo GPT</Text>
+                <Text style={styles.rowLabel}>Provedor</Text>
                 <Text style={styles.rowDesc}>
-                  {settings.openAIModel === 'gpt-4o-mini' ? 'Rapido e economico' : 'Maior precisao'}
+                  {settings.aiProvider === 'gemini' ? 'Google Gemini (Gratis)' : 'OpenAI'}
                 </Text>
               </View>
               <View style={styles.rowValue}>
-                <Text style={styles.rowValueText}>{settings.openAIModel}</Text>
+                <Text style={styles.rowValueText}>{settings.aiProvider === 'gemini' ? 'Gemini' : 'OpenAI'}</Text>
                 <Text style={styles.rowArrow}>›</Text>
               </View>
             </TouchableOpacity>
+
+            {settings.aiProvider === 'openai' ? (
+              <>
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => { setOpenAIKeyInput(openAIKeyInput); setShowOpenAIKeyModal(true); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>OpenAI API Key</Text>
+                    <Text style={styles.rowDesc}>
+                      {openAIKeyInput
+                        ? `••••${openAIKeyInput.slice(-4)}`
+                        : 'Nao configurada'}
+                    </Text>
+                  </View>
+                  <Text style={styles.rowArrow}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.row, { borderBottomWidth: 0 }]}
+                  onPress={() => Alert.alert('Modelo', 'Escolha:', [
+                    { text: 'gpt-4o-mini', onPress: () => updateSetting('openAIModel', 'gpt-4o-mini') },
+                    { text: 'gpt-4o', onPress: () => updateSetting('openAIModel', 'gpt-4o') },
+                    { text: 'Cancelar', style: 'cancel' },
+                  ])}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Modelo OpenAI</Text>
+                    <Text style={styles.rowDesc}>
+                      {settings.openAIModel === 'gpt-4o-mini' ? 'Rapido e economico' : 'Maior precisao'}
+                    </Text>
+                  </View>
+                  <View style={styles.rowValue}>
+                    <Text style={styles.rowValueText}>{settings.openAIModel}</Text>
+                    <Text style={styles.rowArrow}>›</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => { setGeminiKeyInput(geminiKeyInput); setShowGeminiKeyModal(true); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Gemini API Key</Text>
+                    <Text style={styles.rowDesc}>
+                      {geminiKeyInput
+                        ? `••••${geminiKeyInput.slice(-4)}`
+                        : 'Nao configurada (500 gratis/dia)'}
+                    </Text>
+                  </View>
+                  <Text style={styles.rowArrow}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.row, { borderBottomWidth: 0 }]}
+                  onPress={() => Alert.alert('Modelo', 'Escolha:', [
+                { text: 'gemini-3.5-flash (Recomendado)', onPress: () => updateSetting('geminiModel', 'gemini-3.5-flash') },
+                { text: 'gemini-2.0-flash', onPress: () => updateSetting('geminiModel', 'gemini-2.0-flash') },
+                { text: 'gemini-1.5-flash', onPress: () => updateSetting('geminiModel', 'gemini-1.5-flash') },
+                { text: 'Cancelar', style: 'cancel' },
+                  ])}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.rowInfo}>
+                    <Text style={styles.rowLabel}>Modelo Gemini</Text>
+                    <Text style={styles.rowDesc}>
+                      {settings.geminiModel === 'gemini-3.5-flash' ? 'Mais recente' : settings.geminiModel === 'gemini-2.0-flash' ? 'Rapido' : 'Economico'}
+                    </Text>
+                  </View>
+                  <View style={styles.rowValue}>
+                    <Text style={styles.rowValueText}>{settings.geminiModel}</Text>
+                    <Text style={styles.rowArrow}>›</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            )}
           </Card>
         </View>
 
@@ -186,14 +268,14 @@ const SettingsScreen: React.FC = () => {
       </ScrollView>
 
       <AppModal
-        visible={showApiKeyModal}
+        visible={showOpenAIKeyModal}
         title="OpenAI API Key"
         subtitle="Cole sua chave (sk-...)"
-        onClose={() => setShowApiKeyModal(false)}
+        onClose={() => setShowOpenAIKeyModal(false)}
         footer={
           <>
-            <ModalAction label="Cancelar" onPress={() => setShowApiKeyModal(false)} variant="ghost" />
-            <ModalAction label="Salvar" onPress={handleSaveApiKey} />
+            <ModalAction label="Cancelar" onPress={() => setShowOpenAIKeyModal(false)} variant="ghost" />
+            <ModalAction label="Salvar" onPress={handleSaveOpenAIKey} />
           </>
         }
       >
@@ -201,26 +283,68 @@ const SettingsScreen: React.FC = () => {
           style={styles.apiInput}
           placeholder="sk-..."
           placeholderTextColor={Colors.textDisabled}
-          value={apiKeyInput}
-          onChangeText={setApiKeyInput}
+          value={openAIKeyInput}
+          onChangeText={setOpenAIKeyInput}
           autoCapitalize="none"
           autoCorrect={false}
-          secureTextEntry={!showApiKey}
+          secureTextEntry={!showOpenAIKey}
         />
         <View style={styles.apiToggle}>
           <AppButton
-            title={showApiKey ? 'Ocultar' : 'Mostrar'}
-            onPress={() => setShowApiKey(!showApiKey)}
+            title={showOpenAIKey ? 'Ocultar' : 'Mostrar'}
+            onPress={() => setShowOpenAIKey(!showOpenAIKey)}
             variant="ghost"
           />
         </View>
-        {settings.openAIKey ? (
+        {openAIKeyInput ? (
           <AppButton
             title="Limpar Chave"
             onPress={async () => {
-              await updateSetting('openAIKey', '');
-              setApiKeyInput('');
-              setShowApiKeyModal(false);
+              await openAIApiKeyStorage.remove();
+              setOpenAIKeyInput('');
+              setShowOpenAIKeyModal(false);
+            }}
+            variant="ghost"
+          />
+        ) : null}
+      </AppModal>
+
+      <AppModal
+        visible={showGeminiKeyModal}
+        title="Gemini API Key"
+        subtitle="Cole sua chave (AIza...)"
+        onClose={() => setShowGeminiKeyModal(false)}
+        footer={
+          <>
+            <ModalAction label="Cancelar" onPress={() => setShowGeminiKeyModal(false)} variant="ghost" />
+            <ModalAction label="Salvar" onPress={handleSaveGeminiKey} />
+          </>
+        }
+      >
+        <TextInput
+          style={styles.apiInput}
+          placeholder="AIza..."
+          placeholderTextColor={Colors.textDisabled}
+          value={geminiKeyInput}
+          onChangeText={setGeminiKeyInput}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry={!showGeminiKey}
+        />
+        <View style={styles.apiToggle}>
+          <AppButton
+            title={showGeminiKey ? 'Ocultar' : 'Mostrar'}
+            onPress={() => setShowGeminiKey(!showGeminiKey)}
+            variant="ghost"
+          />
+        </View>
+        {geminiKeyInput ? (
+          <AppButton
+            title="Limpar Chave"
+            onPress={async () => {
+              await geminiApiKeyStorage.remove();
+              setGeminiKeyInput('');
+              setShowGeminiKeyModal(false);
             }}
             variant="ghost"
           />
@@ -236,7 +360,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scroll: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   section: {
     marginHorizontal: Spacing.lg,

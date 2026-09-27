@@ -1,7 +1,38 @@
+# dependencies
 node_modules/
+
+# secrets — nunca versionar
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+serviceAccount*.json
+credentials*.json
+
+# expo / build output
 .expo/
 dist/
 web-build/
+.kotlin/
+.expo-shared/
+
+# tanstack / wrangler (outros projetos do mesmo disco)
+.tanstack/
+.wrangler/
+
+# typescript
 *.tsbuildinfo
-.env*.local
+
+# logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS / Windows
 .DS_Store
+Thumbs.db

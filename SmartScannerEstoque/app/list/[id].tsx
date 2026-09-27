@@ -12,9 +12,11 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { savedListStorage } from '../../src/storage/ProductStorage';
 import { SavedList, Product } from '../../src/types/Product';
+import { ProductFormDataSchema, QuantitySchema } from '../../src/types/validation';
 import { exportSavedListCSV } from '../../src/utils/ExcelExport';
 import { AppButton, AppInput, Card } from '../../components';
 import { Colors, Typography, Spacing, Radius } from '../../theme';
+import { Package, Minus, Plus, Pencil, Trash2 } from 'lucide-react-native';
 
 const ListDetailScreen: React.FC = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,6 +39,8 @@ const ListDetailScreen: React.FC = () => {
     const updatedProducts = list.products.map(p => {
       if (p.id === productId) {
         const newQty = Math.max(0, p.quantity + delta);
+        const qtyValidation = QuantitySchema.safeParse(newQty);
+        if (!qtyValidation.success) return p;
         return { ...p, quantity: newQty, updatedAt: new Date().toISOString() };
       }
       return p;
@@ -62,6 +66,23 @@ const ListDetailScreen: React.FC = () => {
 
   const handleSaveEdit = async (productId: string) => {
     if (!list) return;
+
+    const validation = ProductFormDataSchema.safeParse({
+      description: editValues.description ?? '',
+      model: editValues.model ?? '',
+      color: editValues.color ?? '',
+      voltage: editValues.voltage ?? '',
+      brand: editValues.brand,
+      sku: editValues.sku,
+      quantity: editValues.quantity ?? 1,
+      unit: editValues.unit ?? 'UN',
+    });
+
+    if (!validation.success) {
+      Alert.alert('Dados invalidos', validation.error.issues[0].message);
+      return;
+    }
+
     const updatedProducts = list.products.map(p => {
       if (p.id === productId) {
         return {
@@ -210,7 +231,10 @@ const ListDetailScreen: React.FC = () => {
                       <AppInput
                         label="Quantidade"
                         value={`${editValues.quantity ?? 1}`}
-                        onChangeText={t => setEditValues({ ...editValues, quantity: parseInt(t) || 1 })}
+                        onChangeText={t => {
+                          const cleaned = t.replace(/[^0-9]/g, '');
+                          setEditValues({ ...editValues, quantity: cleaned === '' ? 0 : parseInt(cleaned) });
+                        }}
                         keyboardType="numeric"
                       />
                     </View>
@@ -224,7 +248,7 @@ const ListDetailScreen: React.FC = () => {
                 <View>
                   <View style={styles.productHeader}>
                     <View style={styles.productIcon}>
-                      <Text style={styles.productIconText}>📦</Text>
+                      <Package size={16} color={Colors.primary} strokeWidth={2} />
                     </View>
                     <View style={styles.productInfo}>
                       <Text style={styles.productName} numberOfLines={1}>{product.description}</Text>
@@ -240,22 +264,24 @@ const ListDetailScreen: React.FC = () => {
                         style={styles.qtyBtn}
                         onPress={() => handleUpdateQuantity(product.id, -1)}
                       >
-                        <Text style={styles.qtyBtnText}>-</Text>
+                        <Minus size={14} color={Colors.text} strokeWidth={2.5} />
                       </TouchableOpacity>
                       <Text style={styles.qtyValue}>{product.quantity}</Text>
                       <TouchableOpacity
                         style={styles.qtyBtn}
                         onPress={() => handleUpdateQuantity(product.id, 1)}
                       >
-                        <Text style={styles.qtyBtnText}>+</Text>
+                        <Plus size={14} color={Colors.text} strokeWidth={2.5} />
                       </TouchableOpacity>
                     </View>
                   </View>
                   <View style={styles.productActions}>
                     <TouchableOpacity style={styles.editBtn} onPress={() => handleStartEdit(product)}>
+                      <Pencil size={14} color={Colors.primary} strokeWidth={2} />
                       <Text style={styles.editBtnText}>Editar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteProduct(product.id)}>
+                      <Trash2 size={14} color={Colors.danger} strokeWidth={2} />
                       <Text style={styles.deleteBtnText}>Excluir</Text>
                     </TouchableOpacity>
                   </View>
@@ -271,8 +297,8 @@ const ListDetailScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: Spacing.xl, paddingBottom: 100 },
-  contentSmall: { padding: Spacing.lg, paddingBottom: 80 },
+  content: { padding: Spacing.xl, paddingBottom: 120 },
+  contentSmall: { padding: Spacing.lg, paddingBottom: 100 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   loadingText: { color: Colors.textMuted, fontFamily: 'monospace' },
   headerSection: { marginBottom: Spacing.xl },

@@ -15,6 +15,7 @@ import { SavedList } from '../../src/types/Product';
 import { exportSavedListCSV } from '../../src/utils/ExcelExport';
 import { AppButton, EmptyState } from '../../components';
 import { Colors, Typography, Spacing, Radius } from '../../theme';
+import { List, Download, Trash2 } from 'lucide-react-native';
 
 const ListsScreen: React.FC = () => {
   const router = useRouter();
@@ -73,7 +74,7 @@ const ListsScreen: React.FC = () => {
         activeOpacity={0.7}
       >
         <View style={styles.listItemIcon}>
-          <Text style={styles.listItemIconText}>📋</Text>
+          <List size={18} color={Colors.primary} strokeWidth={2} />
         </View>
         <View style={styles.listItemContent}>
           <Text style={styles.listItemName} numberOfLines={1}>{item.name}</Text>
@@ -90,10 +91,10 @@ const ListsScreen: React.FC = () => {
         </View>
         <View style={styles.listItemActions}>
           <TouchableOpacity style={styles.iconButton} onPress={() => handleExport(item)}>
-            <Text style={styles.iconButtonText}>📥</Text>
+            <Download size={16} color={Colors.primary} strokeWidth={2} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.iconButton, styles.iconButtonDanger]} onPress={() => handleDelete(item)}>
-            <Text style={styles.iconButtonText}>🗑️</Text>
+            <Trash2 size={16} color={Colors.danger} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
     fontFamily: 'monospace',
   },
-  list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
+  list: { paddingHorizontal: Spacing.lg, paddingBottom: 120 },
   listItem: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.surfaceCard, borderRadius: Radius.xl, padding: Spacing.lg,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { Package } from 'lucide-react-native';
 import { Colors, Typography, Spacing } from '../theme';
 
 interface EmptyStateProps {
@@ -14,7 +15,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ title, subtitle }) => {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>📦</Text>
+        <Package size={28} color={Colors.primary} strokeWidth={1.5} />
       </View>
       <Text style={[styles.title, isSmallScreen && styles.titleSmall]}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -35,7 +36,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  icon: { fontSize: 28 },
   title: { fontSize: Typography.sizes.lg, fontWeight: Typography.weights.semibold, color: Colors.textSecondary, marginBottom: Spacing.sm, textAlign: 'center' },
   titleSmall: { fontSize: Typography.sizes.base },
   subtitle: { fontSize: Typography.sizes.md, color: Colors.textMuted, textAlign: 'center' },

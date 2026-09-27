@@ -1,8 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { SavedList, Product, ExtractedLabelData, ProductFormData } from '../types/Product';
 
 const SETTINGS_KEY = 'settings';
 const SAVED_LISTS_KEY = 'savedLists';
+const OPENAI_API_KEY_SECURE_KEY = 'openai_api_key';
+const GEMINI_API_KEY_SECURE_KEY = 'gemini_api_key';
 
 export interface AppSettings {
   defaultUnit: string;
@@ -10,8 +13,9 @@ export interface AppSettings {
   autoIncrementQuantity: boolean;
   scanSoundEnabled: boolean;
   vibrationEnabled: boolean;
-  openAIKey: string;
+  aiProvider: 'openai' | 'gemini';
   openAIModel: string;
+  geminiModel: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -20,8 +24,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   autoIncrementQuantity: true,
   scanSoundEnabled: true,
   vibrationEnabled: true,
-  openAIKey: '',
+  aiProvider: 'gemini',
   openAIModel: 'gpt-4o-mini',
+  geminiModel: 'gemini-3.5-flash',
 };
 
 let settingsCache: AppSettings | null = null;
@@ -43,6 +48,42 @@ async function saveSettings(settings: AppSettings): Promise<void> {
   settingsCache = settings;
   await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
+
+export const openAIApiKeyStorage = {
+  async get(): Promise<string> {
+    try {
+      return await SecureStore.getItemAsync(OPENAI_API_KEY_SECURE_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  },
+
+  async set(key: string): Promise<void> {
+    await SecureStore.setItemAsync(OPENAI_API_KEY_SECURE_KEY, key);
+  },
+
+  async remove(): Promise<void> {
+    await SecureStore.deleteItemAsync(OPENAI_API_KEY_SECURE_KEY);
+  },
+};
+
+export const geminiApiKeyStorage = {
+  async get(): Promise<string> {
+    try {
+      return await SecureStore.getItemAsync(GEMINI_API_KEY_SECURE_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  },
+
+  async set(key: string): Promise<void> {
+    await SecureStore.setItemAsync(GEMINI_API_KEY_SECURE_KEY, key);
+  },
+
+  async remove(): Promise<void> {
+    await SecureStore.deleteItemAsync(GEMINI_API_KEY_SECURE_KEY);
+  },
+};
 
 export const settingsStorage = {
   async get(): Promise<AppSettings> {

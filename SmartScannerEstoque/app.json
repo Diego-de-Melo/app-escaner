@@ -2,7 +2,8 @@
   "expo": {
     "name": "SmartScanner Estoque",
     "slug": "SmartScannerEstoque",
-    "version": "2.2.0",
+    "scheme": "smartscanner",
+    "version": "2.3.0",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -45,7 +46,9 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-secure-store",
+      "expo-camera"
     ],
     "extra": {
       "eas": {
